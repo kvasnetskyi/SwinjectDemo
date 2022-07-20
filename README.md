@@ -5,7 +5,7 @@ You can find more information in the [presentation](https://github.com/kvasnetsk
 1. [Dependency injection](#dependency-injection)
 2. [Circular Dependencies](#circular-dependencies)
 3. [Dependency injection: Pros and cons](#pros-and-cons)
-4. [DI Libraries/Frameworks](#di-libraries/frameworks)
+4. [DI Libraries and Frameworks](#di-libraries-and-frameworks)
 5. [Swinject](#swinject)
 
 # Dependency injection
@@ -16,17 +16,13 @@ Dependency injection is a design pattern in which all the dependencies of an obj
 The DI concept invites us to create and store all necessary data in a container, and to transfer it to dependent objects.
 
 There are several ways of introducing dependency:
-- **Interface injection**
-This is implemented by using protocols. Objects subscribe to one interface that accepts the dependencies you want, then the injector injects those dependencies based on the interface.
+- **Interface injection** – this is implemented by using protocols. Objects subscribe to one interface that accepts the dependencies you want, then the injector injects those dependencies based on the interface.
 
-- **Constructor injection**
-This is the most popular type of injection, where we pass all the dependencies to the object through the initializer.
+- **Constructor injection** – this is the most popular type of injection, where we pass all the dependencies to the object through the initializer.
 
-- **Property injection**
-In this injection method, we declare the dependencies inside the object as optional properties, and inject them into the object after it is initialized.
+- **Property injection** – in this injection method, we declare the dependencies inside the object as optional properties, and inject them into the object after it is initialized.
 
-- **Method injection**
-This works in the same way as Property injection, but creates a method that sets the needed dependency into a private property.
+- **Method injection** – this works in the same way as Property injection, but creates a method that sets the needed dependency into a private property.
 
 Property and Method injection have the same disadvantage - the object is initialised, but it has no dependencies. In some cases this can lead to unexpected situations, as the object is incomplete after initialisation. But, at the same time, it is sometimes necessary, namely when there are **cyclical dependencies**.
 
@@ -67,22 +63,18 @@ class B {
 
 let a = A()
 let b = B(a: A)
-a.b = b
+a.b = b // Property injection
 ```
 
 # Pros and cons
 Dependency injection has more pros than cons.
-- **Explicit object dependencies**
-This gives better control over the complexity of the object, and eradicates the possibility of problems with implicit dependencies.
+- **Explicit object dependencies** – this gives better control over the complexity of the object, and eradicates the possibility of problems with implicit dependencies.
 
-- **External object dependencies**
-This allows object creation code to be separated from the business logic, improving segregation of responsibility.
+- **External object dependencies** – this allows object creation code to be separated from the business logic, improving segregation of responsibility.
 
-- **Flexible dependencies**
-It is possible to substitute an object for another. Objects become easy to test.
+- **Flexible dependencies** – it is possible to substitute an object for another. Objects become easy to test.
 
-- **Reduces coupling**
-This is what the Inversion of Control principle requires.
+- **Reduces coupling** – this is what the Inversion of Control principle requires.
 
 - **Simplifies object reuse**
 
@@ -90,7 +82,7 @@ But there are also disadvantages:
 - **More code**
 - **More time wasted**
 
-# DI Libraries/Frameworks
+# DI Libraries and Frameworks
 If a project contains many different services that depend on other services - use the library to make life easier for yourself and for other developers who will then deal with these dependencies.
 
 Roughly speaking, DI libraries or frameworks for IOS development can be classified into [reflection-based](#reflection) and [code generation-based](#code-generation).
