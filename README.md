@@ -7,6 +7,10 @@ You can find more information in the [presentation](https://github.com/kvasnetsk
 3. [Dependency injection: Pros and cons](#pros-and-cons)
 4. [DI Libraries and Frameworks](#di-libraries-and-frameworks)
 5. [Swinject](#swinject)
+6. [Object Scope](#object-scope)
+7. [Thread Safety](#thread-safety)
+8. [Container Hierarchy](#container-hierarchy)
+9. [Assembly & Assembler](#assembly-&-assembler)
 
 # Dependency injection
 Dependency injection is a design pattern in which all the dependencies of an object are passed externally. This pattern is one implementation of the **Inversion of Control** principle.
@@ -173,11 +177,132 @@ internal protocol ServiceEntryProtocol: AnyObject {
 - factory - is the block which is responsible for creating the dependency. 
 - initCompleted - the block, which is called after the completion of object initialization. It is used for property and method injection to resolve [circular dependencies](#circular-dependencies). 
 
+More information can be found in the [documentation](https://github.com/Swinject/Swinject/blob/master/Documentation/DIContainer.md).
+
 # Object Scope
+A description of how the dependency is shared in the system. It is represented as an enum.
 
+Swinject provides four types of Object Scope:
+- **Transient** – each time a dependency is resolved, the Swinject will return a new object.
+- **Graph** – each time a dependency is resolved directly, Swinject will return a new object, just like `transient`. However, if the object is resolved within the register clause, the object can be reused in the context of the graph creation.
+- **Container** – Swinject creates an object the first time a resolve is attempted, and then reuses this object every time. Great for replacing the Singleton pattern.
+- **Weak** – works in the same way as `Container`, but the object can be deleted from memory if there is not at least one strong reference to it.
 
+The `inObjectScope` method is used to use the correct Object Scope. The default is `graph` Object Scope.
+```swift
+container.register(AppConfiguration.self) { _ in
+    AppConfigurationImpl()
+}
+.inObjectScope(.container)
+```
 
+More information can be found in the [documentation](https://github.com/Swinject/Swinject/blob/master/Documentation/ObjectScopes.md).
 
+# Thread Safety
+Containers in Swinject, are **not thread-safety**. But Swinject provides the functionality to resolve dependencies in parallel.
+
+It is worth remembering that **we must always register the dependency from the same thread.**
+```swift
+let container = Container()
+
+func threadSafeContainerTest() {
+    container.register (AppConfiguration.self) {_ in AppConfigurationImpl() }
+    
+    let threadSafeContainer = container.synchronize()
+    
+    // Do something concurrently
+    for _ in 0..<10 {
+        DispatchQueue.global().async {
+            let _ = threadSafeContainer.resolve(AppConfiguration.self)
+        }
+    }
+}
+```
+
+More information can be found in the [documentation](https://github.com/Swinject/Swinject/blob/master/Documentation/ThreadSafety.md).
+
+# Container Hierarchy
+Containers, like classes, can inherit from each other.
+
+A container hierarchy is a tree of containers for sharing registered dependencies.
+```swift
+let parentContainer = Container()
+lazy var childContainer = Container(parent: parentContainer)
+    
+func parentContainerTest(){
+    parentContainer.register(AppConfiguration.self) { in
+        AppConfigurationImpl()
+    }
+
+    let service = childContainer.resolve(AppConfiguration.self)
+    print(service != nil) // prints "true"
+}
+```
+
+More information can be found in the [documentation](https://github.com/Swinject/Swinject/blob/master/Documentation/ContainerHierarchy.md).
+
+# Assembly & Assembler
+This functionality allows you to break down your dependency registration into separate modules.
+
+The functionality contains two component parts:
+- **Assembly** – this is the protocol to which the shared container is provided. The shared container will contain all registered dependencies from each Assembly.
+- **Assembler** – responsible for managing Assembly instances and the container. It stores an array of Assembly instances that will use the shared container.
+
+**You must hold a strong reference to the Assembler otherwise the Container will be deallocated along with your assembler.**
+
+```swift
+// Service Assembly
+class ServiceAssembly: Assembly {
+    func assemble(container: Container) {
+        container.register(ServiceA.self) { resolver in
+            return ServiceA()
+        }
+        
+        container.register(ServiceB.self) { resolver in
+            return ServiceB()
+        }
+    }
+}
+
+// Manager Assembly
+class ManagerAssembly: Assembly {
+    func assemble(container: Container) {
+        container.register(ManagerA.self) { resolver in
+            return ManagerA(
+                resolver.resolve(ServiceA.self)!
+            )
+        }
+        
+        container.register(ManagerB.self) { resolver in
+            return ManagerB(
+                resolver.resolve(ServiceB.self)!
+            )
+        }
+    }
+}
+
+// Assembler
+let assembler = Assembler([
+    ServiceAssembly(),
+    ManagerAssembly()
+])
+
+// Resolve manager from Manager Assembly via assembler
+func resolveTest() {
+    let _ = assembler.resolver.resolve(ManagerB.self)
+}
+```
+
+Also, you can lazy load an assembly to the assembler using the apply method:
+```swift
+func addAssemblyTest() {
+    assembler.apply(assemblies: [
+        LazyLoadedAssembly()
+    ])
+}
+```
+
+More information can be found in the [documentation](https://github.com/Swinject/Swinject/blob/master/Documentation/Assembler.md).
 
 Developed By
 ------------
